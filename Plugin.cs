@@ -12,11 +12,13 @@ namespace NOMotion
         private Vector3 rot;
         private string rotString;
         private UDPClient NOMotionUDP;
+        private bool isKillSwitch = false;
         private void Awake()
         {
             // Plugin startup logic
             Logger = base.Logger;
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+            Configuration.InitSettings(Config);
             aircraft = null;
             rot = Vector3.zero;
             rotString = string.Empty;
@@ -26,8 +28,16 @@ namespace NOMotion
 
         void Update()
         {
+            if (Configuration.KillSwitch.Value.IsDown())
+            {
+                isKillSwitch = !isKillSwitch;
+                if (isKillSwitch)
+                {
+                    Logger?.LogInfo("Kill Switch is ON!");
+                }
+            }
             GameManager.GetLocalAircraft(out aircraft);
-            if (null != aircraft)
+            if (null != aircraft && !isKillSwitch)
             {
                 rotString = $"{aircraft.rb.angularVelocity.z},{aircraft.rb.angularVelocity.x},{aircraft.rb.angularVelocity.y}";
                 NOMotionUDP.SendMotion(rotString);
